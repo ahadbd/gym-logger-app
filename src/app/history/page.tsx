@@ -6,10 +6,11 @@ import { db } from "@/lib/firebase";
 import { Workout } from "@/types";
 import WorkoutEntry from "@/components/WorkoutEntry";
 import Link from "next/link";
-import { ArrowLeft, Calendar, LayoutGrid, Loader2 } from "lucide-react";
+import { ArrowLeft, Calendar, LayoutGrid, Loader2, Download } from "lucide-react";
 import { format } from "date-fns";
 import { useAuth } from "@/context/AuthContext";
 import SignIn from "@/components/SignIn";
+import { exportWorkoutsToCSV } from "@/lib/export";
 
 export default function HistoryPage() {
   const { user, loading: authLoading } = useAuth();
@@ -69,14 +70,26 @@ export default function HistoryPage() {
   return (
     <main className="min-h-screen bg-slate-950 text-slate-50 pb-32 max-w-lg mx-auto px-6">
       <header className="sticky top-0 z-40 py-8 glass -mx-6 px-6 mb-12 border-b border-white/5">
-        <div className="flex items-center gap-6">
-          <Link href="/" className="p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/10 text-white">
-            <ArrowLeft className="w-6 h-6" />
-          </Link>
-          <div className="space-y-0.5">
-            <h1 className="text-3xl font-black tracking-tighter text-white uppercase italic">HISTORY</h1>
-            <p className="text-xs font-bold text-primary uppercase tracking-widest pl-1">Your Legacy</p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-6">
+            <Link href="/" className="p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/10 text-white">
+              <ArrowLeft className="w-6 h-6" />
+            </Link>
+            <div className="space-y-0.5">
+              <h1 className="text-3xl font-black tracking-tighter text-white uppercase italic">HISTORY</h1>
+              <p className="text-xs font-bold text-primary uppercase tracking-widest pl-1">Your Legacy</p>
+            </div>
           </div>
+          {workouts.length > 0 && (
+            <button
+              onClick={() => exportWorkoutsToCSV(workouts)}
+              className="p-3 bg-primary/10 hover:bg-primary/20 rounded-xl transition-all border border-primary/20 text-primary flex items-center gap-2 group"
+              title="Export to CSV"
+            >
+              <Download className="w-5 h-5 group-hover:scale-110 transition-transform" />
+              <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Export</span>
+            </button>
+          )}
         </div>
       </header>
 
@@ -108,9 +121,19 @@ export default function HistoryPage() {
               </header>
               
               <div className="flex flex-col gap-4">
-                {workout.entries.map((entry, idx) => (
-                  <WorkoutEntry key={idx} entry={entry} />
-                ))}
+                {workout.entries.map((entry, idx) => {
+                  const setNumber = workout.entries
+                    .slice(0, idx + 1)
+                    .filter(e => e.movement.toLowerCase() === entry.movement.toLowerCase()).length;
+                    
+                  return (
+                    <WorkoutEntry 
+                      key={idx} 
+                      entry={entry} 
+                      setNumber={setNumber} 
+                    />
+                  );
+                })}
               </div>
             </section>
           ))

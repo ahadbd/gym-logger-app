@@ -15,6 +15,7 @@ const outfit = Outfit({
 export const metadata: Metadata = {
   title: "Gym Logger | Log your workouts",
   description: "Minimal, mobile-first workout logging app with premium design",
+  manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",

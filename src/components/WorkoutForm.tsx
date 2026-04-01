@@ -1,22 +1,109 @@
 "use client";
 
-import { useState } from "react";
-import { collection, query, where, getDocs, addDoc, updateDoc, arrayUnion, Timestamp, limit } from "firebase/firestore";
+import { useState, useEffect, useRef } from "react";
+import { collection, query, where, orderBy, getDocs, addDoc, updateDoc, arrayUnion, Timestamp, limit } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { WorkoutEntrySchema } from "@/types";
 import { startOfDay, endOfDay } from "date-fns";
 import { useAuth } from "@/context/AuthContext";
-import { Plus, Loader2, X, Dumbbell, Hash, Weight as WeightIcon } from "lucide-react";
+import { getSuggestedPerformance, updateLeaderboardEntry } from "@/lib/analytics";
+import { Plus, Loader2, X, Dumbbell, Hash, Weight as WeightIcon, ArrowUpRight, Activity, FileText, ChevronDown, ChevronUp } from "lucide-react";
 
-export default function WorkoutForm() {
+interface WorkoutFormProps {
+  onLogSuccess?: () => void;
+  onPR?: (data: { movement: string; type: "weight" | "1rm"; old: number; new: number }) => void;
+}
+
+export default function WorkoutForm({ onLogSuccess, onPR }: WorkoutFormProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [movement, setMovement] = useState("");
   const [reps, setReps] = useState<number | "">("");
   const [weight, setWeight] = useState<number | "">("");
+  const [rpe, setRpe] = useState<number>(8); // Default to a standard training RPE
+  const [notes, setNotes] = useState("");
+  const [showNotes, setShowNotes] = useState(false);
+  const [suggestion, setSuggestion] = useState<{
+    lastWeight: number;
+    lastReps: number;
+    suggestedWeight: number;
+    suggestedReps: number;
+  } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const { user } = useAuth();
+  const searchTimeout = useRef<NodeJS.Timeout | null>(null);
+
+  // Smart Suggestion Logic
+  useEffect(() => {
+    if (searchTimeout.current) clearTimeout(searchTimeout.current);
+    
+    if (movement.length < 3) {
+      setSuggestion(null);
+      return;
+    }
+
+    searchTimeout.current = setTimeout(async () => {
+      if (user) {
+        const result = await getSuggestedPerformance(user.uid, movement);
+        setSuggestion(result as any);
+      }
+    }, 500);
+
+    return () => {
+      if (searchTimeout.current) clearTimeout(searchTimeout.current);
+    };
+  }, [movement, user]);
+
+  const applySuggestion = () => {
+    if (suggestion) {
+      setWeight(suggestion.suggestedWeight);
+      setReps(suggestion.suggestedReps);
+    }
+  };
+
+  const calculate1RM = (w: number, r: number) => {
+    if (r === 1) return w;
+    return Number((w * (1 + r / 30)).toFixed(1));
+  };
+
+  const checkPR = async (m: string, w: number, r: number) => {
+    if (!user) return;
+    try {
+      // Query for previous workouts containing this movement
+      const q = query(
+        collection(db, "workouts"),
+        where("userId", "==", user.uid),
+        orderBy("date", "desc"),
+        limit(50) // Check recent history for comparison
+      );
+
+      const snapshot = await getDocs(q);
+      let bestWeight = 0;
+      let best1RM = 0;
+
+      snapshot.docs.forEach(doc => {
+        const data = doc.data();
+        data.entries.forEach((entry: any) => {
+          if (entry.movement.toLowerCase() === m.toLowerCase()) {
+            const e1rm = calculate1RM(entry.weight, entry.reps);
+            if (entry.weight > bestWeight) bestWeight = entry.weight;
+            if (e1rm > best1RM) best1RM = e1rm;
+          }
+        });
+      });
+
+      const current1RM = calculate1RM(w, r);
+
+      if (bestWeight > 0 && w > bestWeight) {
+        onPR?.({ movement: m, type: "weight", old: bestWeight, new: w });
+      } else if (best1RM > 0 && current1RM > best1RM) {
+        onPR?.({ movement: m, type: "1rm", old: best1RM, new: current1RM });
+      }
+    } catch (err) {
+      console.error("PR_CHECK_ERROR:", err);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,8 +115,10 @@ export default function WorkoutForm() {
     const m = movement.trim();
     const r = Number(reps);
     const w = Number(weight);
+    const rpeValue = rpe;
+    const n = notes.trim() || undefined;
 
-    const result = WorkoutEntrySchema.safeParse({ movement: m, reps: r, weight: w });
+    const result = WorkoutEntrySchema.safeParse({ movement: m, reps: r, weight: w, rpe: rpeValue, notes: n });
     if (!result.success) {
       setError(result.error.issues[0].message);
       setIsSubmitting(false);
@@ -68,14 +157,24 @@ export default function WorkoutForm() {
         }).catch(err => console.error("BG_ADD_ERROR:", err));
       }
 
+      // Check for PR before clearing
+      await checkPR(m, w, r);
+
+      // Sync with global leaderboard
+      updateLeaderboardEntry(user);
 
       // Optimistic Cleanup: Reset UI immediately
       setMovement("");
       setReps("");
       setWeight("");
+      setNotes("");
+      setShowNotes(false);
       setIsSubmitting(false);
       setIsOpen(false);
       setError(null);
+
+      // Trigger success callback for rest timer
+      if (onLogSuccess) onLogSuccess();
     } catch (err) {
       console.error("PRE_LOG_ERROR:", err);
       setError("Failed to initialize save. Please check your connection.");
@@ -107,6 +206,7 @@ export default function WorkoutForm() {
       >
         <X className="w-5 h-5 text-muted-foreground" />
       </button>
+
 
       <div className="space-y-1">
         <h2 className="text-2xl font-black tracking-tighter text-white">NEW ENTRY</h2>
@@ -161,6 +261,78 @@ export default function WorkoutForm() {
             />
           </div>
         </div>
+
+        <div className="space-y-4 p-5 rounded-3xl bg-white/5 border border-white/10">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1 flex items-center gap-2">
+              <Activity className="w-3 h-3" /> Exertion (RPE)
+            </label>
+            <span className={`text-sm font-black italic ${rpe >= 9 ? 'text-red-400' : rpe <= 6 ? 'text-primary' : 'text-white'}`}>
+              RPE {rpe}
+            </span>
+          </div>
+          <input
+            type="range"
+            min="1"
+            max="10"
+            step="1"
+            className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-primary"
+            value={rpe}
+            onChange={(e) => setRpe(Number(e.target.value))}
+            disabled={isSubmitting}
+          />
+          <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-slate-600 px-1">
+            <span>Easy</span>
+            <span className="text-primary italic">Perfect</span>
+            <span>Failure</span>
+          </div>
+        </div>
+
+        {/* Expandable Notes */}
+        <div className="space-y-3">
+          <button
+            type="button"
+            onClick={() => setShowNotes(!showNotes)}
+            className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-500 hover:text-primary transition-colors ml-1"
+          >
+            <FileText className="w-3 h-3" /> 
+            {showNotes ? "Hide Notes" : "Add Training Notes"}
+            {showNotes ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+          </button>
+          
+          {showNotes && (
+            <textarea
+              placeholder="e.g. Felt light, explosive tempo..."
+              className="w-full p-4 rounded-2xl bg-white/5 border border-white/10 focus:border-primary/50 focus:bg-white/10 focus:outline-none transition-all text-sm font-medium text-slate-300 placeholder:text-slate-700 min-h-[80px] resize-none"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              disabled={isSubmitting}
+            />
+          )}
+        </div>
+
+        {suggestion && (
+          <button
+            type="button"
+            onClick={applySuggestion}
+            className="w-full p-4 rounded-2xl bg-primary/10 border border-primary/30 flex items-center justify-between group hover:bg-primary/20 transition-all animate-in fade-in slide-in-from-top-2"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                <ArrowUpRight className="w-5 h-5" />
+              </div>
+              <div className="text-left">
+                <p className="text-[10px] font-black text-primary uppercase tracking-widest leading-none mb-1">Elite Suggestion</p>
+                <p className="text-sm font-bold text-white leading-none">
+                  Target: <span className="text-primary">{suggestion.suggestedWeight}kg</span> x {suggestion.suggestedReps}
+                </p>
+              </div>
+            </div>
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter group-hover:text-primary transition-colors">
+              Click to Apply
+            </span>
+          </button>
+        )}
 
         {error && (
           <p className="text-xs font-bold text-red-400 px-4 py-2 bg-red-400/10 rounded-xl border border-red-400/20">

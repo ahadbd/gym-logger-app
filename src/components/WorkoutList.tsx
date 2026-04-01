@@ -90,9 +90,20 @@ export default function WorkoutList() {
       </div>
       
       <div className="flex flex-col gap-4">
-        {workout.entries.map((entry, idx) => (
-          <WorkoutEntry key={idx} entry={entry} />
-        ))}
+        {workout.entries.map((entry, idx) => {
+          // Calculate set number for this movement in this workout
+          const movementSets = workout.entries
+            .slice(0, idx + 1)
+            .filter(e => e.movement.toLowerCase() === entry.movement.toLowerCase());
+          
+          return (
+            <WorkoutEntry 
+              key={idx} 
+              entry={entry} 
+              setNumber={movementSets.length} 
+            />
+          );
+        })}
       </div>
     </div>
   );

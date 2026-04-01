@@ -1,0 +1,17 @@
+{
+  "name": "Elite Gym Logger",
+  "short_name": "GymLogger",
+  "description": "Premium training engine for high-performance athletes.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#bef264",
+  "icons": [
+    {
+      "src": "https://img.icons8.com/fluency/512/000000/weightlifting.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
