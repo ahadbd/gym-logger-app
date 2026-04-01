@@ -4,5 +4,13 @@
     "location": "us-central",
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"
+  },
+  "auth": {
+    "providers": {
+      "googleSignIn": {
+        "oAuthBrandDisplayName": "Gym Logger",
+        "supportEmail": "ahad.earninnet@gmail.com"
+      }
+    }
   }
 }

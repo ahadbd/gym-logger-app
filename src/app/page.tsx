@@ -1,9 +1,28 @@
+"use client";
+
+import { useAuth } from "@/context/AuthContext";
+import SignIn from "@/components/SignIn";
+import UserHeader from "@/components/UserHeader";
 import WorkoutList from "@/components/WorkoutList";
 import WorkoutForm from "@/components/WorkoutForm";
 import Link from "next/link";
-import { History, Dumbbell, Zap } from "lucide-react";
+import { History, Dumbbell, Zap, Loader2 } from "lucide-react";
 
 export default function Home() {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-950">
+        <Loader2 className="w-10 h-10 text-primary animate-spin" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <SignIn />;
+  }
+
   return (
     <main className="min-h-screen max-w-lg mx-auto flex flex-col relative px-6">
       {/* Header */}
@@ -13,8 +32,8 @@ export default function Home() {
             <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center glow">
               <Dumbbell className="w-6 h-6" />
             </div>
-            <h1 className="text-2xl font-black tracking-tighter">
-              GYM<span className="text-primary italic">LOGGER</span>
+            <h1 className="text-2xl font-black tracking-tighter uppercase italic">
+              Gym<span className="text-primary">Logger</span>
             </h1>
           </div>
           <Link 
@@ -28,14 +47,16 @@ export default function Home() {
 
       {/* Main Content Area */}
       <div className="flex-1 space-y-12">
+        <UserHeader />
+        
         <header className="space-y-2">
           <div className="flex items-center gap-2 text-primary">
             <Zap className="w-4 h-4 fill-current" />
             <span className="text-xs font-black uppercase tracking-widest italic">Live Session</span>
           </div>
-          <h2 className="text-4xl font-black tracking-tight leading-[0.9] text-white">
-            PUSH YOUR <br />
-            <span className="text-primary">LIMITS.</span>
+          <h2 className="text-4xl font-black tracking-tight leading-[0.9] text-white italic uppercase">
+            Push Your <br />
+            <span className="text-primary italic">Limits.</span>
           </h2>
         </header>
 
@@ -54,5 +75,6 @@ export default function Home() {
     </main>
   );
 }
+
 
 

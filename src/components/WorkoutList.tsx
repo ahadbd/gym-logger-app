@@ -8,18 +8,28 @@ import WorkoutEntry from "./WorkoutEntry";
 import { startOfDay, endOfDay } from "date-fns";
 import { History, Calendar } from "lucide-react";
 
+import { useAuth } from "@/context/AuthContext";
+
 export default function WorkoutList() {
+  const { user } = useAuth();
   const [workout, setWorkout] = useState<Workout | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!user) {
+      setWorkout(null);
+      setLoading(false);
+      return;
+    }
+
     const today = new Date();
     const start = startOfDay(today);
     const end = endOfDay(today);
 
-    // Query for the latest workout doc for the current day
+    // Query for the latest workout doc for the current day and user
     const q = query(
       collection(db, "workouts"),
+      where("userId", "==", user.uid),
       where("date", ">=", Timestamp.fromDate(start)),
       where("date", "<=", Timestamp.fromDate(end)),
       orderBy("date", "desc"),
@@ -37,7 +47,8 @@ export default function WorkoutList() {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [user]);
+
 
   if (loading) {
     return (

@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { collection, query, where, orderBy, getDocs, addDoc, updateDoc, arrayUnion, Timestamp, limit } from "firebase/firestore";
+import { collection, query, where, getDocs, addDoc, updateDoc, arrayUnion, Timestamp, limit } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { WorkoutEntrySchema, WorkoutEntry } from "@/types";
+import { WorkoutEntrySchema } from "@/types";
 import { startOfDay, endOfDay } from "date-fns";
-import { Plus, Loader2, X, ChevronUp, Dumbbell, Hash, Weight as WeightIcon } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { Plus, Loader2, X, Dumbbell, Hash, Weight as WeightIcon } from "lucide-react";
 
 export default function WorkoutForm() {
   const [isOpen, setIsOpen] = useState(false);
@@ -15,9 +16,11 @@ export default function WorkoutForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const { user } = useAuth();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isSubmitting) return;
+    if (isSubmitting || !user) return;
 
     setIsSubmitting(true);
     setError(null);
@@ -40,6 +43,7 @@ export default function WorkoutForm() {
 
       const q = query(
         collection(db, "workouts"),
+        where("userId", "==", user.uid),
         where("date", ">=", Timestamp.fromDate(start)),
         where("date", "<=", Timestamp.fromDate(end)),
         limit(1)
@@ -57,11 +61,13 @@ export default function WorkoutForm() {
       } else {
         // Fire and forget (optimistic)
         addDoc(collection(db, "workouts"), {
+          userId: user.uid,
           date: Timestamp.fromDate(today),
           entries: [result.data],
           createdAt: Timestamp.now(),
         }).catch(err => console.error("BG_ADD_ERROR:", err));
       }
+
 
       // Optimistic Cleanup: Reset UI immediately
       setMovement("");
@@ -70,7 +76,7 @@ export default function WorkoutForm() {
       setIsSubmitting(false);
       setIsOpen(false);
       setError(null);
-    } catch (err: any) {
+    } catch (err) {
       console.error("PRE_LOG_ERROR:", err);
       setError("Failed to initialize save. Please check your connection.");
       setIsSubmitting(false);

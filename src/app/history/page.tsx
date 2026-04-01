@@ -1,20 +1,29 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
+import { collection, query, where, orderBy, onSnapshot, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Workout } from "@/types";
 import WorkoutEntry from "@/components/WorkoutEntry";
 import Link from "next/link";
-import { ArrowLeft, Calendar, LayoutGrid } from "lucide-react";
+import { ArrowLeft, Calendar, LayoutGrid, Loader2 } from "lucide-react";
 import { format } from "date-fns";
+import { useAuth } from "@/context/AuthContext";
+import SignIn from "@/components/SignIn";
 
 export default function HistoryPage() {
+  const { user, loading: authLoading } = useAuth();
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const q = query(collection(db, "workouts"), orderBy("date", "desc"));
+    if (!user) return;
+
+    const q = query(
+      collection(db, "workouts"), 
+      where("userId", "==", user.uid),
+      orderBy("date", "desc")
+    );
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const docs = snapshot.docs.map((doc) => ({
@@ -26,12 +35,24 @@ export default function HistoryPage() {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [user]);
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-950">
+        <Loader2 className="w-10 h-10 text-primary animate-spin" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <SignIn />;
+  }
 
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-950 p-6 max-w-lg mx-auto space-y-12 animate-pulse">
-        <header className="flex items-center gap-6 py-8">
+        <header className="flex items-center gap-6 py-8 border-b border-white/5">
           <div className="w-12 h-12 bg-slate-900 rounded-2xl" />
           <div className="w-48 h-8 bg-slate-900 rounded-xl" />
         </header>
@@ -61,12 +82,12 @@ export default function HistoryPage() {
 
       <div className="space-y-16">
         {workouts.length === 0 ? (
-          <div className="text-center py-32 px-4 flex flex-col items-center glass rounded-[2.5rem] glow">
+          <div className="text-center py-32 px-4 flex flex-col items-center glass rounded-[2.5rem] glow border border-white/5">
             <div className="p-6 bg-primary/10 rounded-3xl mb-6">
               <LayoutGrid className="w-12 h-12 text-primary" />
             </div>
-            <h2 className="text-2xl font-black tracking-tighter text-white mb-2">EMPTY VAULT</h2>
-            <p className="text-muted-foreground font-medium mb-8">No workouts logged in your history yet.</p>
+            <h2 className="text-2xl font-black tracking-tighter text-white mb-2 uppercase italic">Empty Vault</h2>
+            <p className="text-slate-400 font-medium mb-8">No workouts logged in your history yet.</p>
             <Link href="/" className="px-8 py-4 bg-primary text-white font-black rounded-2xl italic tracking-widest uppercase glow hover:scale-105 transition-all">
               START NOW
             </Link>
@@ -77,11 +98,11 @@ export default function HistoryPage() {
               <header className="flex items-center justify-between px-2">
                 <div className="flex items-center gap-3 text-primary">
                   <Calendar className="w-5 h-5" />
-                  <h3 className="text-sm font-black uppercase tracking-[0.2em]">
-                    {format(workout.date.toDate(), "MMM do, yyyy")}
+                  <h3 className="text-sm font-black uppercase tracking-[0.2em] italic">
+                    {format((workout.date as Timestamp).toDate(), "MMM do, yyyy")}
                   </h3>
                 </div>
-                <div className="px-3 py-1 bg-white/5 rounded-full text-[10px] font-black text-muted-foreground tracking-widest uppercase border border-white/5">
+                <div className="px-3 py-1 bg-white/5 rounded-full text-[10px] font-black text-slate-500 tracking-widest uppercase border border-white/10">
                   {workout.entries.length} Sets
                 </div>
               </header>
@@ -98,4 +119,5 @@ export default function HistoryPage() {
     </main>
   );
 }
+
 

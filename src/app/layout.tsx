@@ -29,6 +29,8 @@ export const viewport: Viewport = {
   userScalable: false,
 };
 
+import { AuthContextProvider } from "@/context/AuthContext";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -39,10 +41,13 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${outfit.variable} antialiased selection:bg-primary/30 selection:text-white bg-slate-950 text-slate-50`}
       >
-        {children}
+        <AuthContextProvider>
+          {children}
+        </AuthContextProvider>
       </body>
     </html>
   );
 }
+
 
 
