@@ -15,6 +15,8 @@ export default function WorkoutList() {
   const [workout, setWorkout] = useState<Workout | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const [isSeeding, setIsSeeding] = useState(false);
+
   useEffect(() => {
     if (!user) {
       setWorkout(null);
@@ -49,6 +51,20 @@ export default function WorkoutList() {
     return () => unsubscribe();
   }, [user]);
 
+  const handleLoadDemoData = async () => {
+    if (!user) return;
+    try {
+      setIsSeeding(true);
+      const { seedDemoData } = await import("@/lib/seed");
+      await seedDemoData(user.uid);
+      // Data will automatically update via subscription
+    } catch (error) {
+      console.error("Error seeding data:", error);
+      alert("Failed to load demo data");
+    } finally {
+      setIsSeeding(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -67,7 +83,14 @@ export default function WorkoutList() {
           <Calendar className="w-8 h-8 text-muted-foreground" />
         </div>
         <h3 className="text-xl font-semibold mb-2">No entries yet</h3>
-        <p className="text-muted-foreground">Start logging your workout for today!</p>
+        <p className="text-muted-foreground mb-6">Start logging your workout for today!</p>
+        <button
+          onClick={handleLoadDemoData}
+          disabled={isSeeding}
+          className="px-6 py-2 bg-primary text-black font-bold rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50"
+        >
+          {isSeeding ? "Loading..." : "Load Demo Data"}
+        </button>
       </div>
     );
   }
