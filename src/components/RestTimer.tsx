@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { X, Play, RotateCcw, Plus } from "lucide-react";
+import { X, Plus } from "lucide-react";
 
 interface RestTimerProps {
   duration: number;
@@ -10,7 +10,6 @@ interface RestTimerProps {
 
 export default function RestTimer({ duration, onClose }: RestTimerProps) {
   const [timeLeft, setTimeLeft] = useState(duration);
-  const [isActive, setIsActive] = useState(true);
   const [totalDuration, setTotalDuration] = useState(duration);
   
   // Use a ref for the end time to avoid re-renders if we add time
@@ -54,7 +53,6 @@ export default function RestTimer({ duration, onClose }: RestTimerProps) {
       setTimeLeft(remaining);
       
       if (remaining === 0) {
-        setIsActive(false);
         localStorage.removeItem("gym_logger_rest_end");
         localStorage.removeItem("gym_logger_rest_total");
       }

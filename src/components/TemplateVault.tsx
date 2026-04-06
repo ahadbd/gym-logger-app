@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { collection, query, where, orderBy, onSnapshot, addDoc, deleteDoc, doc, Timestamp, limit, getDocs, updateDoc, arrayUnion } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
-import { Template, WorkoutEntrySchema } from "@/types";
+import { Template, WorkoutEntry } from "@/types";
 import { getSuggestedPerformance, updateLeaderboardEntry } from "@/lib/analytics";
 import { Plus, Trash2, Zap, Bookmark, Loader2, X, ArrowUpRight } from "lucide-react";
 import { startOfDay, endOfDay } from "date-fns";
@@ -14,13 +14,21 @@ interface TemplateVaultProps {
   onPR?: (data: { movement: string; type: "weight" | "1rm"; old: number; new: number }) => void;
 }
 
+interface Suggestion {
+  lastWeight: number;
+  lastReps: number;
+  lastRPE: number;
+  suggestedWeight: number;
+  suggestedReps: number;
+}
+
 export default function TemplateVault({ onLogSuccess, onPR }: TemplateVaultProps) {
   const { user } = useAuth();
   const [templates, setTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
   const [isLogging, setIsLogging] = useState<string | null>(null);
-  const [suggestions, setSuggestions] = useState<Record<string, any>>({});
+  const [suggestions, setSuggestions] = useState<Record<string, Suggestion>>({});
 
   // New Template Form State
   const [newName, setNewName] = useState("");
@@ -49,7 +57,7 @@ export default function TemplateVault({ onLogSuccess, onPR }: TemplateVaultProps
 
       snapshot.docs.forEach(doc => {
         const data = doc.data();
-        data.entries.forEach((entry: any) => {
+        data.entries.forEach((entry: WorkoutEntry) => {
           if (entry.movement.toLowerCase() === m.toLowerCase()) {
             const e1rm = calculate1RM(entry.weight, entry.reps);
             if (entry.weight > bestWeight) bestWeight = entry.weight;
@@ -96,7 +104,7 @@ export default function TemplateVault({ onLogSuccess, onPR }: TemplateVaultProps
     if (!user || templates.length === 0) return;
 
     const fetchAllSuggestions = async () => {
-      const newSuggestions: Record<string, any> = {};
+      const newSuggestions: Record<string, Suggestion> = {};
       for (const t of templates) {
         if (!newSuggestions[t.movement]) {
           const res = await getSuggestedPerformance(user.uid, t.movement);

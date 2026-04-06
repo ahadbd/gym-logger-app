@@ -13,7 +13,7 @@ interface LeaderboardEntry {
   photoURL: string | null;
   peak1RM: number;
   totalSessions: number;
-  lastActive: any;
+  lastActive: unknown;
 }
 
 export default function LeaderboardPage() {
@@ -76,7 +76,7 @@ export default function LeaderboardPage() {
           <div className="relative group flex flex-col items-center">
              <div className="absolute -top-4 bg-slate-400 text-slate-950 text-[10px] font-black px-2 py-0.5 rounded-full z-10">2ND</div>
              <div className="w-full aspect-square glass rounded-3xl border border-white/10 flex items-center justify-center overflow-hidden mb-2">
-                {top3[1].photoURL ? <img src={top3[1].photoURL} className="w-full h-full object-cover" /> : <UserIcon className="w-8 h-8 text-slate-500" />}
+                {top3[1].photoURL ? <img src={top3[1].photoURL} className="w-full h-full object-cover" alt={top3[1].displayName} /> : <UserIcon className="w-8 h-8 text-slate-500" />}
              </div>
              <p className="text-[10px] font-black text-white uppercase truncate w-full text-center">{top3[1].displayName.split(' ')[0]}</p>
              <p className="text-sm font-black text-slate-400 italic">{top3[1].peak1RM}kg</p>
@@ -88,7 +88,7 @@ export default function LeaderboardPage() {
           <div className="relative group flex flex-col items-center scale-110 -translate-y-4">
              <div className="absolute -top-6 bg-primary text-white text-[10px] font-black px-3 py-1 rounded-full z-10 glow animate-bounce">1ST</div>
              <div className="w-full aspect-square glass rounded-full border-2 border-primary flex items-center justify-center overflow-hidden mb-3 shadow-[0_0_30px_rgba(var(--primary-rgb),0.3)]">
-                {top3[0].photoURL ? <img src={top3[0].photoURL} className="w-full h-full object-cover" /> : <UserIcon className="w-10 h-10 text-primary" />}
+                {top3[0].photoURL ? <img src={top3[0].photoURL} className="w-full h-full object-cover" alt={top3[0].displayName} /> : <UserIcon className="w-10 h-10 text-primary" />}
              </div>
              <p className="text-xs font-black text-white uppercase truncate w-full text-center">{top3[0].displayName.split(' ')[0]}</p>
              <p className="text-lg font-black text-primary italic leading-none">{top3[0].peak1RM}kg</p>
@@ -100,7 +100,7 @@ export default function LeaderboardPage() {
           <div className="relative group flex flex-col items-center">
              <div className="absolute -top-4 bg-orange-700 text-white text-[10px] font-black px-2 py-0.5 rounded-full z-10">3RD</div>
              <div className="w-full aspect-square glass rounded-3xl border border-white/10 flex items-center justify-center overflow-hidden mb-2">
-                {top3[2].photoURL ? <img src={top3[2].photoURL} className="w-full h-full object-cover" /> : <UserIcon className="w-8 h-8 text-slate-500" />}
+                {top3[2].photoURL ? <img src={top3[2].photoURL} className="w-full h-full object-cover" alt={top3[2].displayName} /> : <UserIcon className="w-8 h-8 text-slate-500" />}
              </div>
              <p className="text-[10px] font-black text-white uppercase truncate w-full text-center">{top3[2].displayName.split(' ')[0]}</p>
              <p className="text-sm font-black text-orange-700 italic">{top3[2].peak1RM}kg</p>
@@ -118,7 +118,7 @@ export default function LeaderboardPage() {
             <div className="flex items-center gap-4">
               <span className="text-xs font-black text-slate-600 w-4">#{index + 4}</span>
               <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden">
-                {entry.photoURL ? <img src={entry.photoURL} className="w-full h-full object-cover" /> : <UserIcon className="w-5 h-5 text-slate-500" />}
+                {entry.photoURL ? <img src={entry.photoURL} className="w-full h-full object-cover" alt={entry.displayName} /> : <UserIcon className="w-5 h-5 text-slate-500" />}
               </div>
               <div>
                 <p className="text-sm font-black text-white uppercase truncate max-w-[120px]">{entry.displayName}</p>

@@ -1,5 +1,5 @@
-import { Workout } from "@/types";
-import { format, startOfDay, eachDayOfInterval, subDays, isSameDay } from "date-fns";
+import { Workout, WorkoutEntry } from "@/types";
+import { format, eachDayOfInterval, subDays, isSameDay } from "date-fns";
 import { collection, query, where, orderBy, getDocs, limit, setDoc, doc, Timestamp } from "firebase/firestore";
 import { db } from "./firebase";
 import { User } from "firebase/auth";
@@ -132,9 +132,9 @@ export async function getSuggestedPerformance(userId: string, movement: string) 
 
     for (const doc of snapshot.docs) {
       const data = doc.data();
-      const entries = data.entries || [];
+      const entries = data.entries || [] as WorkoutEntry[];
       // Find the most recent entry for this movement
-      const match = entries.find((e: any) => e.movement.toLowerCase() === m);
+      const match = entries.find((e: WorkoutEntry) => e.movement.toLowerCase() === m);
       
       if (match) {
         // RPE-Driven Progression: If last set was too easy (<= 6), jump +5kg instead of +2.5kg
@@ -171,11 +171,11 @@ export async function updateLeaderboardEntry(user: User) {
     );
 
     const snapshot = await getDocs(q);
-    const workouts = snapshot.docs.map(doc => doc.data());
+    const workouts = snapshot.docs.map(doc => doc.data()) as Workout[];
     
     let peak1RM = 0;
     workouts.forEach(w => {
-      w.entries.forEach((e: any) => {
+      w.entries.forEach((e: WorkoutEntry) => {
         const e1rm = calculate1RM(e.weight, e.reps);
         if (e1rm > peak1RM) peak1RM = e1rm;
       });

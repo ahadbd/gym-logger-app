@@ -31,3 +31,10 @@ export type Template = z.infer<typeof TemplateSchema> & {
   userId: string;
   createdAt: Timestamp;
 };
+
+export interface PerformanceMetrics {
+  totalVolume: number;
+  peak1RM: number;
+  avgRPE: number;
+  consistency: number;
+}

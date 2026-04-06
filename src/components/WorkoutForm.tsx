@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { collection, query, where, orderBy, getDocs, addDoc, updateDoc, arrayUnion, Timestamp, limit } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { WorkoutEntrySchema } from "@/types";
+import { WorkoutEntry, WorkoutEntrySchema } from "@/types";
 import { startOfDay, endOfDay } from "date-fns";
 import { useAuth } from "@/context/AuthContext";
 import { getSuggestedPerformance, updateLeaderboardEntry } from "@/lib/analytics";
@@ -14,6 +14,14 @@ interface WorkoutFormProps {
   onPR?: (data: { movement: string; type: "weight" | "1rm"; old: number; new: number }) => void;
 }
 
+interface Suggestion {
+  lastWeight: number;
+  lastReps: number;
+  lastRPE: number;
+  suggestedWeight: number;
+  suggestedReps: number;
+}
+
 export default function WorkoutForm({ onLogSuccess, onPR }: WorkoutFormProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [movement, setMovement] = useState("");
@@ -22,12 +30,7 @@ export default function WorkoutForm({ onLogSuccess, onPR }: WorkoutFormProps) {
   const [rpe, setRpe] = useState<number>(8); // Default to a standard training RPE
   const [notes, setNotes] = useState("");
   const [showNotes, setShowNotes] = useState(false);
-  const [suggestion, setSuggestion] = useState<{
-    lastWeight: number;
-    lastReps: number;
-    suggestedWeight: number;
-    suggestedReps: number;
-  } | null>(null);
+  const [suggestion, setSuggestion] = useState<Suggestion | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -46,7 +49,7 @@ export default function WorkoutForm({ onLogSuccess, onPR }: WorkoutFormProps) {
     searchTimeout.current = setTimeout(async () => {
       if (user) {
         const result = await getSuggestedPerformance(user.uid, movement);
-        setSuggestion(result as any);
+        setSuggestion(result as Suggestion | null);
       }
     }, 500);
 
@@ -84,7 +87,7 @@ export default function WorkoutForm({ onLogSuccess, onPR }: WorkoutFormProps) {
 
       snapshot.docs.forEach(doc => {
         const data = doc.data();
-        data.entries.forEach((entry: any) => {
+        data.entries.forEach((entry: WorkoutEntry) => {
           if (entry.movement.toLowerCase() === m.toLowerCase()) {
             const e1rm = calculate1RM(entry.weight, entry.reps);
             if (entry.weight > bestWeight) bestWeight = entry.weight;

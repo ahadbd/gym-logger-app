@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Trophy, Zap, X, ChevronRight, Award } from "lucide-react";
+import { Trophy, Zap, X, ChevronRight } from "lucide-react";
 
 interface PRAlertProps {
   movement: string;

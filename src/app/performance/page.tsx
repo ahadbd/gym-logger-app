@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { collection, query, where, orderBy, getDocs, limit } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
-import { Workout } from "@/types";
+import { Workout, PerformanceMetrics } from "@/types";
 import { processVolumeTrends, processMuscleDistribution, getPerformanceMetrics, VolumeData, MuscleData } from "@/lib/analytics";
 import VolumeChart from "@/components/VolumeChart";
 import MuscleRadar from "@/components/MuscleRadar";
@@ -16,7 +16,7 @@ export default function PerformanceHub() {
   const [loading, setLoading] = useState(true);
   const [volumeData, setVolumeData] = useState<VolumeData[]>([]);
   const [muscleData, setMuscleData] = useState<MuscleData[]>([]);
-  const [metrics, setMetrics] = useState<any>(null);
+  const [metrics, setMetrics] = useState<PerformanceMetrics | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -139,7 +139,7 @@ export default function PerformanceHub() {
       <div className="p-6 rounded-[2rem] bg-primary/5 border border-primary/20 space-y-2">
         <p className="text-[10px] font-black text-primary uppercase tracking-widest">System Insights</p>
         <p className="text-sm font-bold text-slate-300 italic leading-relaxed">
-          {metrics?.consistency > 80 
+          {metrics && metrics.consistency > 80 
             ? "Your training volume is currently peaking. Strategic recovery is advised to maintain progress."
             : "Consistency is below target levels. Prioritize your schedule to regain momentum."}
         </p>

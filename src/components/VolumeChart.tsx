@@ -1,6 +1,6 @@
 "use client";
 
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from "recharts";
+import { XAxis, YAxis, Tooltip, ResponsiveContainer, Area, AreaChart } from "recharts";
 import { VolumeData } from "@/lib/analytics";
 
 interface VolumeChartProps {

@@ -1,6 +1,6 @@
 "use client";
 
-import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from "recharts";
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer } from "recharts";
 import { MuscleData } from "@/lib/analytics";
 
 interface MuscleRadarProps {
